@@ -1,0 +1,88 @@
+
+1. 查看模块信息
+
+	!lmi mdlname	查看模块的详细信息
+		!lmi nt 查看内核模块的信息
+		
+2. 查看进程和线程的信息
+	进程相关：
+	!dml_proc	显示进程的列表，包括EPROCESS地址/PID/Image Name等
+	
+	!process	显示当前进程信息，包括EPROCESS / ETHREAD 的地址，PEB/TEB的地址
+	
+	!process 0 0 以摘要形式列举出当前系统中的所有的进程。第一个参数为要显示的进程ID，第二个参数指定要显示属性，0表示基本属性
+		!process 0n132 0 			查找PID为132的进程
+		!process 0 0 notepad.exe	查找notepad.exe进程的详细信息
+		!process -1 0 				查看当前进程
+		
+	!process EPROCESS Addr  No 显示某个进程的详细信息
+		!process 826af478 3  显示EPROCESS地址为0x826af478的进程的信息
+			
+	.process 用于切换进程
+		.process /r /p  xxxxxxxx 切换到指定的进程，并且后面的命令将在该进程中执行
+		
+	线程相关：
+	!thread / !thread -1  显示当前线程
+	!thread ETHREAD addr 0xFF  显示某个线程的详细信息
+
+	!thread -t tid 		显示指定线程 tid 的信息
+	
+	.thread 	显示当前的线程
+	
+	.thread /p /r ETHREAD 	切换到指定的线程上去
+	
+3. IRP / IRQL / 设备堆栈
+	
+	!irql	显示处理器当前的IRQL级别
+	
+	!irp	显示IRP的I/O堆栈
+	
+	!drvobj	显示设备对象
+	
+	!devstack	显示设备栈
+	
+4. d* 命令
+
+	dg @cs	显示选择子的内容
+	
+5. !pcr / !prcb
+	
+	!pcr	显示处理器控制域信息
+	!pcr 1 显示 1号处理器的控制域的信息
+	!prcb	显示处理器控制块信息
+	
+6. !idt 	显示终端服务表
+	!idt  3 	显示3号中断的中断服务函数
+	
+	!idt -a		显示中断服务表中所有的中断例程
+	
+7. !running 显示当前正在运行的所有线程
+
+8. !gflag 显示，设置系统全局标志
+	
+	!gflag -? 	帮助
+	
+9. !vm 显示虚拟内存信息
+
+10. !memusage 显示物理内存使用情况
+	
+	!pfn 显示物理内存页的详细信息，指定页面帧编号为参数
+	
+	!db / !eb 用来显示和修改物理内存
+		!dd / !dc / !dq / !ed 
+	
+11. !pte 显示指定的页表项和页目录项
+    确定指定虚拟地址的内存信息
+    
+12. !object 显示对象信息
+	!object xxxxxxxx 显示 指定地址 对象的信息
+	
+	!object \ 显示指定路径的对象的信息
+	
+13. !Token e1ec21d8 显示指定的Token地址的_TOKEN结构体的内容
+
+14. !lpc 查看LPC的信息
+    !lpc port 0xe1366760  查看 LPC 端口的信息
+    
+    
+	

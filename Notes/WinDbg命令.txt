@@ -1,0 +1,476 @@
+基本调试：
+0. 内置的帮助命令：
+	? 			显示常用的命令
+	? /D		显示常用命令和DML
+	.help		显示.命令
+	.help /D  	以DML形式显示'.'命令（顶部会给出链接）
+	.help /D a* 以DML形式显示a开头的'.'命令 (*为通配符)
+	.hh 		打开帮助文件
+	.hh dt		打开帮助文件，并在索引定位到 dt命令
+	
+	version		显示调试器以及加载扩展版本信息
+	vertarget	显示目标计算机的版本
+	n [8|10|16]	设置调试器数基，8进制，10进制等
+	
+	.cls		清空界面
+
+1. 常用'.'命令
+	.srcpath			显示或设置源码的检索路径
+	.srcpath+ 目录		将目录添加到检索到的源码路径
+	.lines [-e|-d|-t]	切换源码行的支持，可用，禁用，切换	
+	
+	.srcnoisy 1 	显示源码的搜索过程  .srcnoisy 0 不显示源码的搜索过程。
+	
+	.open 
+	
+	小写'L'的命令
+	l+l，l-l			显示行数
+	l+o, l-o			除了[s]隐藏一切
+	l+s, l-s			源码和行数
+	l+t, l-t			源码模式对汇编模式
+	
+	例如：
+		.srcpath C:\Users\Administrator\Desktop\WinDbug\TestDebug1 
+		添加源码的路径，模块可以与源码结合，看到源码中的调试过程
+	
+	.exepath C:\Users\Administrator\Desktop\exefiles
+	在调试dump文件时才会用得上可执行映像路径。需要将这个路径设置为调试的exe，dll，sys等可执行文件的路径。
+	
+调试日志
+	.logopen /t d:\logs\mylogfile.txt		打开日志文件 
+	.logappend /t d:\logs\mylogfile.txt		向日志文件中追加 日志
+	.logclose 						关闭日志文件
+	注：在关闭一次调试时，要关闭日志文件。
+	
+调试会话：
+	.attach  PID	(在调试一个进程中)，附加到一个进程
+	.detach			结束调试会话，但是保留用户模式目标程序运行
+	q / qq			结束调试会话，并终止目标程序
+	.restart		重启目标程序	
+
+2. 符号相关
+	ld 模块名		加载指定模块符号
+	ld *			加载所有模块的符号
+	!sym			获取符号加载情况( !sym noisy 显示搜索符号过程，!sym quiet 默认)
+	
+	x 可以列举模块的名字
+	x [选项] 模块!符号
+	选项：	/t	带数据类型
+			/v	详情，包括符号类型与大小
+			/a	按照地址分类
+			/n	按照名称分类
+			/z	按照大小分类(函数在内存中的大小)
+	
+	x [选项]模块名字!符号匹配表达式   可以查找一些函数名字，以方便下断点
+	比如： x  user32！GetWindowT*   列举出 USER32.dll中的 GetWindowT开头的所有的函数。
+	
+	x /t /v notepad!*  用于列举出notepad模块的public函数以及变量
+
+	
+	ln 地址		列出最近的符号，显示给出地址附近的符号，用于确定指针指向位置
+				以及在损坏栈中，确定栈的调用程序。
+		ln 01001b90	列举出地址01001b90附近的符号
+	
+	.sympath  路径		设置符号路径
+	.sympath+ 路径		添加符号路径
+	.symfix	路径		设置符号存储路径
+	.symfix+ 保存路径	附加到现有路径，当作符号下载流存储位置
+	
+	.reload 				为所有模块重载符号信息
+	.reload [/f|/v] 		/f 强制立即加载符号， /v 详细模式
+	.reload [/f|/v] 模块	同上，只是针对特定模块
+	.reload /d				重新加载调试器中的所有模块符号
+			/l 列出所有的模块但是不重新加载符号		
+			/n 重新加载内核符号
+			/user 重新加载用户模式符号
+			/u 卸载指定模块和它的符号
+	例如：
+		.sympath C:\Users\Administrator\Desktop\WinDbug
+		设置程序的符号路径为 C:\Users\Administrator\Desktop\WinDbug
+		.symfix+  D:\Symbols 
+		添加系统模块的符号路径，即微软公共符号的本地存储位置（会被WinDbg自动添加为 D:\Symbols;SRV*http://msdl.microsoft.com/download/symbols）
+	
+	.reload  /u ntdll.dll  		卸载ntdll.dll
+	.reload  /s /f ntdll.dll	加载ntdll.dll
+	
+	注：添加完符号路径后，可以使用 .reload 命令重新加载符号
+
+	命令的扩展：
+	x *!		列出所有的模块
+	x ntdll!*	列出ntdll的所有符号
+	x /t /v MyDll!*	列出MyDll的所有符号的数据类型，符号类型和大小
+	
+	.reload /f @"ntdll.dll"		立刻从ntdll.dll重载符号	
+	
+3. 命令窗口
+	0:000>  这个提示符号：
+	第一个0，表示当前的进程号，冒号后的 000表示当前的线程号。
+	*BUSY*这样的字符串，表示调试器正忙。
+	
+	单核的内核调试为 kd>，而多核的系统以0:kd> 表示内核调试，0表示处理器号
+	
+	输入命令：
+	Esc 可以消除当前行
+	Tab 键可以自动补充命令
+	鼠标点击右键，可以将剪切板上的内容粘贴到命令行输入框
+	直接按Enter键，可以重复上一条命令
+	Ctrl-Break来中断一条没有执行完毕的命令
+	
+伪寄存器：
+	$ip = eip / rip		x86/x64上的ip寄存器
+	$ra = 当前函数的返回地址
+	$retreg  返回值  eax - rax - ret0	分别针对x86/x64/Itanium
+	$csp  当前栈指针， esp - rsp - bsp	
+	$proc  用户态的进程环境块PEB地址
+	$thread	线程环境块 TEB
+	$tpid	当前进程的标识 PID
+	$tid	当前线程的标识TID
+    $exentry 当前程序的入口地址
+	
+4. 反汇编：
+	u 反汇编当前IP寄存器位置的内容
+	u $ip  反汇编当前 $ip上的8条命令
+	
+	uf $ip 反汇编当前$ip地址上的整个函数
+	uf addr	反汇编addr地址上的整个函数
+	
+	ub
+	ub $ip  反汇编$ip之前的8条指令
+	
+
+	ub $ip L2a  反汇编$ip 地址之前的42条指令
+	
+	u $ip  $ip+a 反汇编两个地址之间的指令其中不包括$ip+a地址处的指令
+	
+5. 线程与进程相关：	
+	|		显示所有正在被调试的进程的状态
+	.tlist	列出系统正运行的所有进程
+	!peb	显示进程环境块 PEB 的标准视图
+	
+	~			列出线程
+	~* [命令]	所有线程
+	~. [命令]	当前线程
+	~# [命令]	当前时间或异常引发的线程
+	~ns			转到线程n，n为线程id
+
+	~n f|u|n|m	将线程n  冻结|解冻|挂起|恢复 可以用于线程调试中，暂停某些线程的执行
+        ~1 n 将一号线程挂起计数增加1， ~1 m 将一号线程的挂起计数减少1
+        
+	
+	例如：
+		~ 字符用于查看被调试进程中的线程信息
+		比如： 0  Id:  1998.1358  Suspend: 1  Teb: 7ffde000  Unfrozen
+		表示一条线程的信息，0表示该线程的编号（区分所有列出的）；1998.1358，前者是进程进程ID，后者是线程ID。再后面的信息室线程的状态和Teb地址。在 0 之前的一个点号”.”表示是当前线程。
+		
+		一旦WinDbg中Ctrl+Break之后，会在调试目标的进程中创建一个远线程，并在远线程中执行ntdll!DbgBreakPoint函数，在目标进程中产生一次int3异常，中断到调试器中。
+		
+		~线程编号 s ：可以在线程之间进行切换。 ~0s  则切换到当前进程的0号线程中。
+		
+		|进程编号 s ：可以再进程之间切换。 |1s 则切换到1号进程中去。
+		
+	!teb		显示线程环境块 TEB的标准视图
+	!peb		显示进程环境块的信息，PEB的标准视图
+	
+	!gle		当前线程的最终错误 GetLastError()值
+	!gle -all	所有线程的最终错误
+	
+	!error 错误值		解码并显示一个错误值的信息
+	!error 错误值 l		将错误值作为NTSTATUS代码处理
+	
+	死锁调试：
+	!runaway 		列举出当前所有线程的执行时间
+	!runaway 7		列举出执行时间的详细信息
+	!locks			列举出死锁的信息
+	
+	~*kb 查看当前在进程中运行的所有的线程堆栈，结合 !cs 命令就可以查到那些线程死锁了
+	!cs addr 	可以显示内存处临界区的内容
+	
+	!cs -s  显示每个临界区的初始堆栈回溯
+	!cs -l	仅显示锁定的临界区
+	!cs -?	显示 !cs 的帮助信息
+	
+	~~[tid] tid为线程id，查看当前线程等待的锁是什么	
+	
+	!handle	f  列举出句柄的信息
+	
+6. 控制命令
+	调试源码或汇编：
+	F5 运行或运行到断点，F10逐过程单步执行，F11逐语句单步
+	汇编模式和源码模式的单步执行不同，汇编模式，每次执行一条汇编语句，源码模式，每次执行一句源码。 l-t 来启用 汇编模式， l+t 启用源码模式。
+	
+	g*类的命令：直接运行目标，
+		g 与F5同等，
+		gu 执行到当前函数完成 ××××
+		gc 条件断点之后恢复运行
+		gh 当前异常当做已处理，继续执行
+		gn 当前异常当做未处理，继续执行
+		
+	p*类的命令：单步执行，
+		p  step over，等同于F10
+		pa 执行到制定的地址
+		pc 执行到遇到下一条 call指令
+		pct 执行到遇到一条call指令或一个return指令
+		ph 执行到一条分支指令：条件分支，call调用，函数返回，系统调用等
+		
+		p 计数    计数为走过的指令或源代码的数量
+		
+	t*类的命令： 类似p*类的命令，但是遇到call时会跟踪进去。
+		t   等同于 F11
+		ta  执行到制定地址，本函数和被调用函数的每一步都会显示
+		tb  执行到下一条分支指令
+		tct  执行到下一条call 或 return指令
+		th  类似ph
+		tt  遇到return指令
+	
+    wt  目标执行，直到制定的函数执行完成，显示统计信息
+	
+7. 断点
+	bp  : 打一个断点。
+	0:000> bp TestDebug!main 叹号前面指明了模块，main为模块内的函数名，指明模块可以减少符号的搜索时间。
+        bp [ID] [Options] [Address [Passes]] ["CommandString"]
+        
+        bp MSVCR80D!printf+3  2 "kv; da poi(ebp+8)"
+    
+	在源码窗口，可以使用 F9 设置断点（同VS中）
+	bl  列出当前的所有断点。
+	1  e  0040105d[TestDebug1.cpp@27]  1表示断点id，e表示断点启用，如果是d表示断点金庸，u表示断点未定。后面是断点的地址，以及断点的文件以及行数。
+
+	bd id  禁用编号为id的断点
+	be id  重新启用编号为id的断点
+	bu 与bp一样，用于在一些没有被加载的模块中设置断点，一旦模块加载即可断到断点处。
+	bc id   删除编号为id的断点
+	
+	bp 给C++类成员函数加断点： 
+		bp TestDebug1.exe!CTestClass::SetChar
+		bp TestDebug1.exe!CTestClass__SetChar
+		bp @@C++( TestDebug1.exe!CTestClass::SetChar)
+		两种语法表达式 @@C++表示C++语法，@@masm表示MASM语法，默认使用的是MASM语法。
+	
+	ba 用于给某个内存地址设断点，当这个内存地址被执行，读取，或写入时中断下来。
+		ba w4 @@C++(&i)  &i 是表示变量i的地址，w表示写入，4表示只处理&i地址处的4个字节的写入。
+		
+		ba [r|w|e] [大小] 地址 访问时中断 r为读写，w为写入，e为执行。 大小可设置 1|2|4三个值（64位机器可以设置为8）
+	
+	bm 符号型 	设置符号断点，符号型可包含通配符。这个命令可以设置一些列的断点
+	
+	例如：
+		bp '模块!source.c:12'	在指定源码处设置断点
+		bm myprogram!mem*		符号型等同使用x，在所有mem开头符号加断点
+		
+		bu mymodule!func ".dump C:\dump.dmp;g"	触发断点后执行指令  属于 bu [地址] ["命令串"]
+	
+	~0 bp sample!main 	针对0号线程，设置断点
+	
+	条件断点，后续再学习使用，太庞大了有木有？？？
+	
+	DLL调试的断点：
+	在调试dll时，需要断在dll加载或卸载时加断点，中断下来。
+	sxe ld:[dll name]  加载某个DLL的时候中断
+	sxe ud:[dll name]  卸载某个dll时中断下来
+	
+	sxe ld：wininet  表示 在wininet.dll被装载的时候断点
+	
+	bu wininet!DllMain  表示在wininet模块的DllMain上断下来
+	
+	技巧：
+		在编程代码中设置一个断点：
+			kernel32!DebugBreak	
+			ntdll!DbgBreakPoint
+			__asm int 3				仅用于x86
+	
+8. 访问内存和寄存器
+	以d开头的命令用于查看内存值：
+	
+	d[a|u|b|w|W|d|c|q|f|D] [/c #] [地址]
+		a	Ascii字符
+		u	unicode字符
+		b	字节+ASCII
+		w	字(两个字节)
+		W	字(2字节)+ASCII
+		d	双字 4字节
+		c	双字 + ASCII
+		q	四字 8字节
+		
+		f	浮点，单精度 4字节
+		D	浮点，双精度 8字节	
+		
+		yb	二进制和字节的值
+		yd	二进制和双字节值
+		
+		s	查看String，ANSI_STRING的内容，非da查看的0结尾
+		S	查看一个UNICODE_STRING的内容，非du的0结尾的字符串
+		
+	db addr 按照BYTE类型查看
+	dd addr 按照DWORD类型查看
+	d 不带地址 会按照上一次 d*命令的方式，接着上一次的显示继续显示
+	例如：
+		dd 0046c6b0		显示0046c6b0处的双字
+		dd 0046c6b0	L3	显示0046c6b0处的三个双字
+		du 0046c6b0		显示0046c6b0处的Unicode字符
+	
+	dt nt!_PEB  7ffda000 用于显示结构体，数组，和类对象的内容
+	dt argv  可以显示argv的内容
+	dt -v  结构名称		 用于显示结构体的信息内容。
+	
+	dv 显示当前作用域下的局部变量的类型和值
+	
+	dd*，dq*，dp*:
+		第二位表示指针大小
+		dd* 	使用32位指针
+		dq*		使用64位指针
+		dp*		标准大小，32位或64位，取决于CPU
+		第三位表示如何解引用内存：
+		d*a		以ASCII字符形式显示解引用内存
+		d*u		以Unicode字符形式显示解引用内存
+		d*p		双字或四字显示解引用内存
+		
+		dds		查看四字节地址处的符号（dqs，dps）
+		
+	？ 表达式 ： 表达式求值命令，用来查看符号所代表的值 比如 ？ i 显示 i的值是多少
+	
+	e*命令可以将值写入内存，和d*类似。
+	e[b|w|d|q|f|D] addr  value 	同 d×，修改addr处的内存，值为value
+	e[a|u|za|zu] addr "chars"	修改addr处内存，值为 chars
+	
+	eb  0012ff78 ‘a’ ‘b’ ‘c’ ‘d’ 从地址开始一次写入后面的数值。
+	
+	r 命令用于查看或修改寄存器和伪寄存器的值
+	r				显示所有寄存器值
+	r reg1，reg2 	显示寄存器reg1，寄存器reg2的值
+	r reg1=value	设置寄存器reg1为value
+	~0 r 			显示0号线程的寄存器
+	~* r			显示所有线程的寄存器
+	
+	!address addr  用于显示指定的内存地址的信息。 
+	!address -?			显示帮助信息
+	!address -summary	显示进程的摘要信息
+	例如：
+		!address 400000 用于显示当前进程模块的PE文件头。	   
+    
+    !address -f:stack  ： 查看栈的使用情况
+    
+	!vprot 	addr	显示addr地址处的内存的属性
+	
+	poi(esp)	取 esp所指向的值（相当于解析指针）
+	
+	@eax 		取寄存器的值。
+	
+	!d / !e	读写物理内存
+	
+9. 进程模块的查看命令
+	lm[v|l|k|u|f] [m 模式]  列出模块：详细|带加载符号|进内核符号信息|仅用户符号信息|映像路径  （m 模式 匹配）
+
+	lm  列举当前进程加载的模块，其实地址，模块名称等
+	
+	lmf  显示每个DLL/EXE的具体路径
+	
+	lm命令列表比较长，如果过滤出自己感兴趣的模块，使用lm m 表达式 命令
+	lm m *theme* 列举出包含了 theme字符串的模块
+	
+	lm vm *theme*  列举出模块的详细信息，比如版本，日期等
+	
+	lm a addr  显示addr地址所在的模块
+	
+	!lmi 模块	模块详细信息，包括准确符号信息
+		!lmi uxtheme 列举出 uxtheme.dll的详细调试信息
+		
+	!dlls	列出所有加载的的模块
+			-i  按照初始化顺序
+			-l  按照加载顺序
+			-m  按照内存数序
+			-v  显示详细信息
+			-c 模块地址  仅显示地址处的模块				
+	
+	例如：
+		lmv m kernel32  显示kernel32.dll的详细信息
+		lmD  			DML型的lm	
+	
+	
+	!dh	显示pe文件的头信息
+		-a  显示所有的信息
+		-f  文件头，不显示区块信息
+		-s  显示区块信息
+10. 堆栈的查看命令
+	k 查看堆栈的内容
+	
+	kp 能看到各个函数的输入参数，kp 5 显示5个函数的调用栈 （前提是有私有符号，微软的公有符号不行）
+	
+	kP 比kp看起来更加舒服，所有项格式化
+	
+	kn（callstack with index number）显示调用栈的栈号
+	
+	kb 5 显示前5个函数以及他们的前三个参数
+	
+	kf 5 显示前五个函数栈，以及他们所使用的栈大小
+	
+	kv FPO信息，调用协议
+	
+	.frame 		显示当前帧
+	.frame id   切换到堆栈id处，可以查看这个地方的一些值与变量
+		
+		在.frame n  命令后，切换到指定栈帧，使用 x 可以显示当前函数里面的局部变量值
+	
+	~* kv  显示所有线程的堆栈信息
+	~1 kv  显示1号线程的 堆栈信息  
+	
+11. 使用Windbug分析dump文件
+	!analyze -v  分析命令，自动分析dump
+	
+	!analyze	!analyze -v  显示当前异常或故障检查信息：详细
+				!analyze -hang 用户模式：分析线程栈，以确认是否那个线程正阻塞其他线程				
+				!analyze -f  查看异常分析，即便是调试器没有检测到异常 
+	
+	.lastevent	显示最近的事件或异常，可以看到发生异常的线程
+	
+	!heap 分析出错的堆栈
+	
+	!for_each_frame  dv  /t 显示每一个堆栈函数处的所有变量。
+	
+	.opendump 文件名  打开dump文件
+	
+	.dump 文件名      生成dump文件
+	.dump -? 	显示dump的帮助命令
+		.dump /mf 或 .dump /ma 将创建一个比.dump /f 更大更完整的文件
+
+	windbg -z C:\Awdbin\dumfile.dmp 来启动一个dump调试分析        
+        
+	.ecxr  定位当前异常的上下文信息，并显示重要的寄存器。 !analyze -v 命令后，可以使用这个命令查看
+			异常发生位置的信息。			
+	.exr	显示异常记录
+	.cxr	显示上下文记录
+	
+12. 变量信息：
+	dt -h 						显示dt帮助
+	dt [模块!]名称				显示变量信息
+	dt [模块!]名称 字段 [字段]	仅显示"字段"的值，结构或集合
+	dt [模块!]名称 [字段] 地址	显示的结构的地址
+	dt [模块!]名称*				列出符号（通配符）
+	
+	dv						显示本地变量与参数
+	dv 样式					变量匹配样式
+	dv [/i /t /V] [样式]	i为类型（本地，全局，参数） t为数值类型 V为内存位置或寄存器地址
+		dv /i /t /v  可以显示当前栈帧上的 局部变量，全局变量，以及参数的值
+	
+	例如：	
+		dt ntdll!_PEB*		列出所有包含_PEB的变量
+		dt ntdll!_PEB* -v	以详细输出方式列出，包含地址与大小
+	
+	?? ("Evaluate C++ Expression")
+		?? Irp->Size	显示C++表达式的值
+	
+13. 内存操作：
+	对比内存
+	搜索内存
+	
+	s –a 00400000 L53000 "Wrong"
+	从 0040000 地址开始，向后 L53000 范围内搜索 Wrong字符串
+	
+	移动内存
+	
+14. 调试子进程
+		
+	.childdbg 1		开启子进程调试（从主进程中启动的子进程被调试）
+	.childdbg 0		关闭子进程调试
+	
+
+	
