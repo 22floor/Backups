@@ -341,6 +341,11 @@
 	~0 r 			显示0号线程的寄存器
 	~* r			显示所有线程的寄存器
 	
+    rm 用于修改 r命令的掩码，表示要输出那些寄存器的信息
+        rm 0x3      将 r 命令设置为输出32位/64位寄存器的内容
+        
+        rm 0x1 | 0x2 | 0x8  同时显示段寄存器 / 32位整数寄存器 / 64位整数寄存器内容
+    
 	!address addr  用于显示指定的内存地址的信息。 
 	!address -?			显示帮助信息
 	!address -summary	显示进程的摘要信息
@@ -434,10 +439,15 @@
 
 	windbg -z C:\Awdbin\dumfile.dmp 来启动一个dump调试分析        
         
-	.ecxr  定位当前异常的上下文信息，并显示重要的寄存器。 !analyze -v 命令后，可以使用这个命令查看
-			异常发生位置的信息。			
-	.exr	显示异常记录
-	.cxr	显示上下文记录
+	.ecxr   定位当前异常的上下文信息，并显示重要的寄存器。 !analyze -v 命令后，可以使用这个命令查看异常发生位置的信息。			    
+            显示异常上下文记录
+                
+	.exr    显示异常记录
+            .exr Address    Address 指示异常记录的地址
+            .exr -1         表示显示最近的一次异常记录
+            
+	.cxr    显示上下文记录
+            .cxr Address 显示地址指定的上下文结构体中的信息
 	
 12. 变量信息：
 	dt -h 						显示dt帮助
@@ -460,12 +470,24 @@
 	
 13. 内存操作：
 	对比内存
-	搜索内存
+    
+	搜索内存	
+        s –a 00400000 L53000 "Wrong"
+        从 0040000 地址开始，向后 L53000 范围内搜索 Wrong字符串
+        
+        s 命令后需要跟着选项，除了n 和 l两个参数必须和参数挨着，其他的如果指定了多个选项，需要用 [] 括起来。
+        
+        类型： （类型前面加上 - 符号）
+            b  Byte
+            w  Word
+            d  DWORD 
+            q  QWORD
+            a  ascii字符串
+            u  Unicode字符串
+            
+        
 	
-	s –a 00400000 L53000 "Wrong"
-	从 0040000 地址开始，向后 L53000 范围内搜索 Wrong字符串
-	
-	移动内存
+    移动内存
 	
 14. 调试子进程
 		
@@ -473,4 +495,30 @@
 	.childdbg 0		关闭子进程调试
 	
 
-	
+15. 遍历链表    
+    dt 
+        dt -l List
+            -l 用于帮助 dt寻找下一个LIST_ENTRY结构 比如 dt nt!_EPROCESS -l ActiveProcessLinks.Flink -y Ima -yoi Uni poi(PsInitialSystemProcess)
+            
+        -o          省略结构成员的偏移值
+        -i          不要缩进子类型
+        -p          地址值为物理地址，而不是虚拟地址
+        -r[depth]   递归深度，显示几层子类型
+        
+        -y          列举以-y后参数指定 字符串开始的成员
+        -n          
+        
+        双向列表为LIST_ENTRY的Flink 或Blink，单向列表为SINGLE_LIST_ENTRY的Next域
+        
+    dl
+        dlb  沿着Blinks成员遍历
+        
+        dl nt!PsActiveProcessHead   1000    列举出 nt!PsActiveProcessHead 指向的列表一千个元素
+        
+    !list 
+        !list -t [Module!]Type.Field -x "Commands" [-a "Arguments"] [Options] StartAddress 
+        !list " -t [Module!]Type.Field -x \"Commands\" [-a \"Arguments\"] [Options] StartAddress " 
+        !list -h 
+        
+        -x 要执行的命令
+        -t 指定要遍历的列表，如何寻找下一个表项

@@ -1,4 +1,10 @@
 
+0. 内核下的断点
+    
+    bp 为断点
+        在指定的进程上下文下断，并断到指定的函数，如下的方法
+        bp /p fffffa800295d060 nt!NtWriteFile "da poi(@rsp+30); g"
+
 1. 查看模块信息
 
 	!lmi mdlname	查看模块的详细信息
